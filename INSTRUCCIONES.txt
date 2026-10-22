@@ -1,0 +1,43 @@
+SEMILLA DORADA — PWA CON PRESENTACIÓN E INICIO DE SESIÓN
+==========================================================
+Incluye las dos pantallas acordadas:
+1. Logo oficial durante 2 segundos.
+2. Inicio de sesión con usuario y contraseña.
+Después de entrar, conserva el prototipo de ventas de prueba existente.
+
+PRUEBA INICIAL (SOLO DATOS FICTICIOS)
+Usuario: vendedor1
+Contraseña: Semilla2026!
+IMPORTANTE: son credenciales públicas de demostración. NO publiques esta versión para uso real ni las uses como credenciales definitivas.
+
+ARCHIVOS IMPORTANTES
+- index.html: presentación, inicio de sesión y pantalla de prueba existente.
+- styles.css: diseño adaptable al teléfono.
+- app.js: transición de pantallas, validación, ventas de prueba y exportación CSV.
+- users-config.js: hash local de la cuenta de demostración.
+- configurar-acceso.html: herramienta auxiliar para generar un nuevo archivo de credenciales.
+- logo-semilla-dorada.png: logo oficial facilitado.
+- manifest.webmanifest y sw.js: instalación PWA y caché offline.
+
+CAMBIAR LA CONTRASEÑA ANTES DE PUBLICAR
+1. Abre configurar-acceso.html localmente en Chrome o Edge.
+2. Introduce el nombre de usuario y una contraseña nueva (mínimo 8 caracteres).
+3. Pulsa Generar archivo de credenciales; se descargará users-config.js.
+4. Sustituye users-config.js del proyecto por el archivo generado.
+5. Para crear varias cuentas, esta herramienta genera una cuenta por archivo; para múltiples vendedores habrá que añadir las entradas al arreglo SD_USERS siguiendo el formato del archivo generado.
+6. No compartas credenciales reales ni publiques el archivo de credenciales con datos reales.
+
+ACTUALIZAR GITHUB PAGES
+1. Haz una copia de seguridad del repositorio y no borres la versión actual.
+2. Descomprime este ZIP.
+3. Sube el contenido a la raíz de la rama/carpeta que publica GitHub Pages, incluyendo logo-semilla-dorada.png y users-config.js.
+4. Haz commit y espera a que termine la publicación.
+5. En el teléfono, cierra la PWA y limpia/actualiza la caché si Chrome conserva la versión anterior. No borres los datos del sitio si necesitas conservar ventas ficticias.
+6. Prueba el acceso y luego activa modo avión para comprobar que la interfaz sigue abriendo.
+
+ALMACENAMIENTO Y SEGURIDAD
+- Se conserva la clave de localStorage de ventas sd-demo-sales-v3 para no cambiar el nombre del almacenamiento existente.
+- No se usa servidor ni se envían datos a internet.
+- La contraseña se compara usando PBKDF2-SHA-256 con sal; no se almacena como texto plano en users-config.js.
+- Aun así, esto es solo una barrera local básica: alguien con conocimientos y acceso al dispositivo/archivos puede modificar la app o sus verificaciones. No usar para datos o ventas reales.
+- Haz pruebas en una copia antes de publicar. Esta versión no está auditada para producción.
