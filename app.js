@@ -12,7 +12,24 @@ function money(n){return new Intl.NumberFormat("es-MX",{style:"currency",currenc
 function bytesToHex(buffer){return Array.from(new Uint8Array(buffer),b=>b.toString(16).padStart(2,"0")).join("")}
 async function passwordHash(password,saltHex,iterations){const salt=new Uint8Array(saltHex.match(/.{2}/g).map(byte=>parseInt(byte,16)));const key=await crypto.subtle.importKey("raw",encoder.encode(password),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations,hash:"SHA-256"},key,256);return bytesToHex(bits)}
 async function validateLogin(username,password){if(!window.SD_USERS||!Array.isArray(window.SD_USERS))return false;const user=window.SD_USERS.find(item=>item.username.toLowerCase()===username.trim().toLowerCase());if(!user)return false;return (await passwordHash(password,user.salt,user.iterations))===user.hash}
-function showApp(username){$("splash").hidden=true;$("login-screen").hidden=true;$("app-shell").hidden=false;$("seller-name").textContent=username;sessionStorage.setItem("sd-pruebas-session-user",username);updateNetwork();renderAll();showScreen("home")}
+
+function showApp(username){
+  $("splash").hidden=true;
+  $("login-screen").hidden=true;
+  $("app-shell").hidden=false;
+
+  const user = window.SD_USERS?.find(
+    item => item.username.toLowerCase() === username.trim().toLowerCase()
+  );
+
+  $("seller-name").textContent = user?.name || username;
+
+  sessionStorage.setItem("sd-pruebas-session-user", username);
+  updateNetwork();
+  renderAll();
+  showScreen("home");
+}
+
 function showLogin(){sessionStorage.removeItem("sd-pruebas-session-user");$("app-shell").hidden=true;$("splash").hidden=true;$("login-screen").hidden=false;$("password").value="";$ ("username").focus()}
 function showScreen(name){document.querySelectorAll(".view-screen").forEach(el=>el.hidden=el.id!==`screen-${name}`);document.querySelectorAll("[data-screen]").forEach(el=>el.classList.toggle("active",el.dataset.screen===name));if(name==="sale")prepareSale();if(name==="stores")renderStores();if(name==="prices")renderPrices();if(name==="history")renderHistory();window.scrollTo({top:0,behavior:"instant"})}
 document.querySelectorAll("[data-screen]").forEach(button=>button.addEventListener("click",()=>showScreen(button.dataset.screen)));
