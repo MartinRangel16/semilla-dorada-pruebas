@@ -1,8 +1,8 @@
 {
-  "id": "./",
-  "name": "Semilla Dorada",
-  "short_name": "Semilla Dorada",
-  "description": "Aplicación local de Semilla Dorada, prototipo sin conexión.",
+  "id": "./?app=pruebas-v1",
+  "name": "Semilla Dorada Pruebas",
+  "short_name": "SD Pruebas",
+  "description": "Prototipo de pruebas local de Semilla Dorada, sin conexión.",
   "lang": "es-MX",
   "start_url": "./",
   "scope": "./",

@@ -1,43 +1,30 @@
-SEMILLA DORADA — PWA CON PRESENTACIÓN E INICIO DE SESIÓN
-==========================================================
-Incluye las dos pantallas acordadas:
-1. Logo oficial durante 2 segundos.
-2. Inicio de sesión con usuario y contraseña.
-Después de entrar, conserva el prototipo de ventas de prueba existente.
+SEMILLA DORADA PRUEBAS — PROTOTIPO LOCAL
 
-PRUEBA INICIAL (SOLO DATOS FICTICIOS)
-Usuario: vendedor1
-Contraseña: Semilla2026!
-IMPORTANTE: son credenciales públicas de demostración. NO publiques esta versión para uso real ni las uses como credenciales definitivas.
+Incluye:
+- Pantalla de bienvenida y acceso local.
+- Menú principal.
+- Nota de venta a crédito con los 11 productos: BT300, BT100, Pistache, Semilla, Español, Salado, Enchilado, Haba, Garbanzo, Garapiñado y Churro.
+- La nota muestra Producto, Piezas y Subtotal; no muestra el precio unitario.
+- Cálculo automático del total de piezas y total de venta.
+- Registro, edición y eliminación de tiendas (número, nombre y dirección).
+- Administración independiente de precios por producto.
+- Historial local y exportación de notas a CSV.
+- Caché de Service Worker con nombre exclusivo de Pruebas.
 
-ARCHIVOS IMPORTANTES
-- index.html: presentación, inicio de sesión y pantalla de prueba existente.
-- styles.css: diseño adaptable al teléfono.
-- app.js: transición de pantallas, validación, ventas de prueba y exportación CSV.
-- users-config.js: hash local de la cuenta de demostración.
-- configurar-acceso.html: herramienta auxiliar para generar un nuevo archivo de credenciales.
-- logo-semilla-dorada.png: logo oficial facilitado.
-- manifest.webmanifest y sw.js: instalación PWA y caché offline.
+IMPORTANTE SOBRE ESTA VERSIÓN
+- Es un prototipo para pruebas. Usa datos ficticios; no usar en operación real.
+- No hay servidor ni sincronización. Los datos permanecen en el almacenamiento del navegador/dispositivo.
+- Las claves locales son exclusivas de esta versión: sd-pruebas-sales-v1, sd-pruebas-stores-v1 y sd-pruebas-prices-v1.
+- La caché de esta app se llama semilla-dorada-pruebas-v1 y el Service Worker solo elimina cachés antiguas con el prefijo semilla-dorada-pruebas-. No elimina las cachés de otras apps.
+- Los precios iniciales son únicamente ilustrativos. Ajustarlos desde Administrar precios antes de realizar pruebas de cálculos.
+- La lista de tiendas empieza vacía; registra tiendas ficticias para probar el autocompletado.
 
-CAMBIAR LA CONTRASEÑA ANTES DE PUBLICAR
-1. Abre configurar-acceso.html localmente en Chrome o Edge.
-2. Introduce el nombre de usuario y una contraseña nueva (mínimo 8 caracteres).
-3. Pulsa Generar archivo de credenciales; se descargará users-config.js.
-4. Sustituye users-config.js del proyecto por el archivo generado.
-5. Para crear varias cuentas, esta herramienta genera una cuenta por archivo; para múltiples vendedores habrá que añadir las entradas al arreglo SD_USERS siguiendo el formato del archivo generado.
-6. No compartas credenciales reales ni publiques el archivo de credenciales con datos reales.
+PUBLICACIÓN EN GITHUB PAGES
+1. Descomprime este ZIP en tu computadora.
+2. Abre el repositorio GitHub de Semilla Dorada Pruebas, no el estable.
+3. Sube los archivos que están dentro de esta carpeta directamente a la raíz del repositorio, reemplazando los archivos con el mismo nombre. No subas solo el ZIP ni una carpeta contenedora.
+4. Espera a que GitHub Pages publique los cambios.
+5. En el navegador, recarga la página. Si ves una versión antigua, cierra la PWA instalada y recarga la página del sitio; el Service Worker puede tardar en actualizarse.
 
-ACTUALIZAR GITHUB PAGES
-1. Haz una copia de seguridad del repositorio y no borres la versión actual.
-2. Descomprime este ZIP.
-3. Sube el contenido a la raíz de la rama/carpeta que publica GitHub Pages, incluyendo logo-semilla-dorada.png y users-config.js.
-4. Haz commit y espera a que termine la publicación.
-5. En el teléfono, cierra la PWA y limpia/actualiza la caché si Chrome conserva la versión anterior. No borres los datos del sitio si necesitas conservar ventas ficticias.
-6. Prueba el acceso y luego activa modo avión para comprobar que la interfaz sigue abriendo.
-
-ALMACENAMIENTO Y SEGURIDAD
-- Se conserva la clave de localStorage de ventas sd-demo-sales-v3 para no cambiar el nombre del almacenamiento existente.
-- No se usa servidor ni se envían datos a internet.
-- La contraseña se compara usando PBKDF2-SHA-256 con sal; no se almacena como texto plano en users-config.js.
-- Aun así, esto es solo una barrera local básica: alguien con conocimientos y acceso al dispositivo/archivos puede modificar la app o sus verificaciones. No usar para datos o ventas reales.
-- Haz pruebas en una copia antes de publicar. Esta versión no está auditada para producción.
+ACCESO DE DEMOSTRACIÓN
+Usa las credenciales configuradas en users-config.js. En el ZIP original de presentación se indicó vendedor1 / Semilla2026!; confirma que users-config.js conserva esa configuración antes de publicar.

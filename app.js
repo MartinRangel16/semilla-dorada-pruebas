@@ -1,76 +1,41 @@
-const KEY="sd-demo-sales-v3";
-const $=id=>document.getElementById(id);
-const encoder=new TextEncoder();
-function sales(){try{const value=JSON.parse(localStorage.getItem(KEY)||"[]");return Array.isArray(value)?value:[]}catch{return[]}}
-function money(n){return new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(n)}
+// Semilla Dorada Pruebas: almacenamiento separado de la versión estable.
+const KEYS={sales:"sd-pruebas-sales-v1",stores:"sd-pruebas-stores-v1",prices:"sd-pruebas-prices-v1"};
+const PRODUCTS=["BT300","BT100","Pistache","Semilla","Español","Salado","Enchilado","Haba","Garbanzo","Garapiñado","Churro"];
+const DEFAULT_PRICES=Object.fromEntries(PRODUCTS.map((name,i)=>[name,[120,85,95,60,55,50,50,65,55,60,45][i]]));
+const $=id=>document.getElementById(id);const encoder=new TextEncoder();
+function read(key,fallback){try{const x=JSON.parse(localStorage.getItem(key)||"null");return x??fallback}catch{return fallback}}
+function write(key,value){localStorage.setItem(key,JSON.stringify(value))}
+function sales(){const x=read(KEYS.sales,[]);return Array.isArray(x)?x:[]}
+function stores(){const x=read(KEYS.stores,[]);return Array.isArray(x)?x:[]}
+function prices(){return {...DEFAULT_PRICES,...read(KEYS.prices,{})}}
+function money(n){return new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(n)||0)}
 function bytesToHex(buffer){return Array.from(new Uint8Array(buffer),b=>b.toString(16).padStart(2,"0")).join("")}
-async function passwordHash(password,saltHex,iterations){
-  const salt=new Uint8Array(saltHex.match(/.{2}/g).map(byte=>parseInt(byte,16)));
-  const key=await crypto.subtle.importKey("raw",encoder.encode(password),"PBKDF2",false,["deriveBits"]);
-  const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations,hash:"SHA-256"},key,256);
-  return bytesToHex(bits);
-}
-async function validateLogin(username,password){
-  if(!window.SD_USERS||!Array.isArray(window.SD_USERS))return false;
-  const user=window.SD_USERS.find(item=>item.username.toLowerCase()===username.trim().toLowerCase());
-  if(!user)return false;
-  const actual=await passwordHash(password,user.salt,user.iterations);
-  return actual===user.hash;
-}
-function showApp(username){
-  $("splash").hidden=true;$("login-screen").hidden=true;$("app-shell").hidden=false;
-  $("seller-name").textContent=username;$("welcome-name").textContent=username;
-  sessionStorage.setItem("sd-session-user",username);
-  updateNetwork();render();
-}
-function showLogin(){
-  sessionStorage.removeItem("sd-session-user");
-  $("app-shell").hidden=true;$("splash").hidden=true;$("login-screen").hidden=false;
-  $("password").value="";$("username").focus();
-}
-function render(){
-  const items=sales();const total=items.reduce((sum,item)=>sum+Number(item.amount||0),0);
-  $("total").textContent=money(total);$("commission").textContent=money(total*.05);$("list").replaceChildren();
-  if(!items.length){const p=document.createElement("p");p.className="muted";p.textContent="Todavía no hay ventas de prueba.";$("list").append(p)}
-  items.slice().reverse().forEach(item=>{
-    const row=document.createElement("div");row.className="sale";const left=document.createElement("div");
-    const store=document.createElement("b");store.textContent=item.store;const meta=document.createElement("small");
-    meta.textContent=`${item.type} · ${item.date} · Guardada solo en este dispositivo`;
-    left.append(store,meta);const amount=document.createElement("strong");amount.textContent=money(Number(item.amount));row.append(left,amount);$("list").append(row)
-  });
-}
-$("login-form").addEventListener("submit",async event=>{
-  event.preventDefault();const username=$("username").value.trim();const password=$("password").value;
-  const button=$("login-button");const error=$("login-error");button.disabled=true;button.textContent="Validando…";error.hidden=true;
-  try{
-    if(await validateLogin(username,password)){showApp(username)}
-    else{error.hidden=false;$("password").value="";$("password").focus()}
-  }catch(err){error.textContent="No se pudo validar el acceso en este navegador. Actualiza Chrome e inténtalo de nuevo.";error.hidden=false;console.error(err)}
-  finally{button.disabled=false;button.textContent="Ingresar"}
-});
-$("form").addEventListener("submit",event=>{
-  event.preventDefault();const store=$("store").value.trim();const amount=Number($("amount").value);
-  if(!store||!Number.isFinite(amount)||amount<=0)return;
-  const items=sales();items.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+"-"+Math.random().toString(16).slice(2),store,amount,type:$("type").value,date:new Date().toLocaleString("es-MX"),seller:sessionStorage.getItem("sd-session-user")||""});
-  try{localStorage.setItem(KEY,JSON.stringify(items));$("notice").textContent="Venta ficticia guardada en este dispositivo. No se envió a un servidor.";$("notice").hidden=false;$("form").reset();render()}
-  catch(error){$("notice").textContent="No se pudo guardar en el navegador. Comprueba el espacio disponible.";$("notice").hidden=false}
-});
-$("clear").addEventListener("click",()=>{if(confirm("¿Borrar las ventas ficticias de esta demo en este dispositivo?")){localStorage.removeItem(KEY);render()}});
-$("export").addEventListener("click",()=>{
-  const rows=[["ID","Tienda","Tipo","Importe MXN","Fecha","Vendedor"],...sales().map(x=>[x.id,x.store,x.type,x.amount,x.date,x.seller||""])];
-  const csv=rows.map(row=>row.map(value=>'"'+String(value).replaceAll('"','""')+'"').join(",")).join("\\r\\n");
-  const url=URL.createObjectURL(new Blob(["\\ufeff"+csv],{type:"text/csv;charset=utf-8"}));const link=document.createElement("a");
-  link.href=url;link.download="semilla-dorada-demo.csv";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
-});
-$("logout").addEventListener("click",showLogin);
+async function passwordHash(password,saltHex,iterations){const salt=new Uint8Array(saltHex.match(/.{2}/g).map(byte=>parseInt(byte,16)));const key=await crypto.subtle.importKey("raw",encoder.encode(password),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations,hash:"SHA-256"},key,256);return bytesToHex(bits)}
+async function validateLogin(username,password){if(!window.SD_USERS||!Array.isArray(window.SD_USERS))return false;const user=window.SD_USERS.find(item=>item.username.toLowerCase()===username.trim().toLowerCase());if(!user)return false;return (await passwordHash(password,user.salt,user.iterations))===user.hash}
+function showApp(username){$("splash").hidden=true;$("login-screen").hidden=true;$("app-shell").hidden=false;$("seller-name").textContent=username;sessionStorage.setItem("sd-pruebas-session-user",username);updateNetwork();renderAll();showScreen("home")}
+function showLogin(){sessionStorage.removeItem("sd-pruebas-session-user");$("app-shell").hidden=true;$("splash").hidden=true;$("login-screen").hidden=false;$("password").value="";$ ("username").focus()}
+function showScreen(name){document.querySelectorAll(".view-screen").forEach(el=>el.hidden=el.id!==`screen-${name}`);document.querySelectorAll("[data-screen]").forEach(el=>el.classList.toggle("active",el.dataset.screen===name));if(name==="sale")prepareSale();if(name==="stores")renderStores();if(name==="prices")renderPrices();if(name==="history")renderHistory();window.scrollTo({top:0,behavior:"instant"})}
+document.querySelectorAll("[data-screen]").forEach(button=>button.addEventListener("click",()=>showScreen(button.dataset.screen)));
+function renderAll(){renderHome();renderStores();renderPrices();renderHistory()}
+function renderHome(){$("home-sales-count").textContent=sales().length;$ ("home-stores-count").textContent=stores().length}
+function prepareSale(){const today=new Date();$("sale-date").textContent=today.toLocaleDateString("es-MX");const datalist=$("store-options");datalist.replaceChildren();stores().forEach(s=>{const option=document.createElement("option");option.value=s.number;option.label=s.name;datalist.append(option)});renderProductRows();updateStoreAutofill();updateSaleTotals()}
+function renderProductRows(){const tbody=$("sale-product-rows");tbody.replaceChildren();const currentPrices=prices();PRODUCTS.forEach((name,i)=>{const tr=document.createElement("tr");const product=document.createElement("td");product.textContent=name;const qtyCell=document.createElement("td");const input=document.createElement("input");input.type="number";input.min="0";input.step="1";input.inputMode="numeric";input.placeholder="0";input.value="";input.setAttribute("aria-label",`Piezas de ${name}`);input.dataset.product=name;input.className="quantity-input";input.addEventListener("input",updateSaleTotals);qtyCell.append(input);const sub=document.createElement("td");sub.className="subtotal-cell";sub.id=`subtotal-${i}`;sub.textContent=money(0);tr.append(product,qtyCell,sub);tbody.append(tr)})}
+function updateSaleTotals(){let pieceCount=0,total=0;const p=prices();PRODUCTS.forEach((name,i)=>{const input=document.querySelector(`.quantity-input[data-product="${CSS.escape(name)}"]`);const qty=Math.max(0,Math.floor(Number(input?.value)||0));pieceCount+=qty;const subtotal=qty*(Number(p[name])||0);total+=subtotal;const cell=$(`subtotal-${i}`);if(cell)cell.textContent=money(subtotal)});$("sale-total-pieces").textContent=pieceCount;$("sale-total-amount").textContent=money(total)}
+function updateStoreAutofill(){const number=$("sale-store-number").value.trim();const store=stores().find(s=>s.number.toLowerCase()===number.toLowerCase());$("sale-store-name").value=store?.name||"";$("sale-store-address").value=store?.address||""}
+$("sale-store-number").addEventListener("input",updateStoreAutofill);$("sale-store-number").addEventListener("change",updateStoreAutofill);
+$("sale-form").addEventListener("submit",event=>{event.preventDefault();const number=$("sale-store-number").value.trim();const store=stores().find(s=>s.number.toLowerCase()===number.toLowerCase());if(!store){notice("sale-notice","Registra primero la tienda o elige un número de tienda existente.");return}const currentPrices=prices();const lines=[];PRODUCTS.forEach(name=>{const input=document.querySelector(`.quantity-input[data-product="${CSS.escape(name)}"]`);const qty=Math.max(0,Math.floor(Number(input?.value)||0));if(qty>0)lines.push({product:name,quantity:qty,unitPrice:Number(currentPrices[name])||0,subtotal:qty*(Number(currentPrices[name])||0)})});if(!lines.length){notice("sale-notice","Captura al menos una pieza antes de generar la venta.");return}const totalPieces=lines.reduce((a,x)=>a+x.quantity,0);const total=lines.reduce((a,x)=>a+x.subtotal,0);const note={id:crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(16).slice(2)}`,storeNumber:store.number,storeName:store.name,storeAddress:store.address,lines,totalPieces,total,date:new Date().toISOString(),dateLabel:new Date().toLocaleString("es-MX"),seller:sessionStorage.getItem("sd-pruebas-session-user")||"",type:"Crédito"};try{const all=sales();all.push(note);write(KEYS.sales,all);notice("sale-notice",`Nota generada correctamente. Total: ${money(total)}.`);$("sale-form").reset();prepareSale();renderAll()}catch(err){notice("sale-notice","No se pudo guardar la nota. Comprueba el almacenamiento disponible.")}});
+$("cancel-sale").addEventListener("click",()=>{if(confirm("¿Limpiar los datos de esta nota sin guardarla?")){$("sale-form").reset();prepareSale();notice("sale-notice","La nota se limpió; no se guardó.")}});
+function notice(id,message){const el=$(id);el.textContent=message;el.hidden=false}
+$("store-form").addEventListener("submit",event=>{event.preventDefault();const id=$("store-edit-id").value;const number=$("store-number").value.trim();const name=$("store-name").value.trim();const address=$("store-address").value.trim();const list=stores();if(list.some(s=>s.number.toLowerCase()===number.toLowerCase()&&s.id!==id)){notice("store-notice","Ya existe una tienda con ese número.");return}const record={id:id|| (crypto.randomUUID?crypto.randomUUID():String(Date.now())),number,name,address};try{write(KEYS.stores,id?list.map(s=>s.id===id?record:s):[...list,record]);$("store-form").reset();$("store-edit-id").value="";$("store-form-title").textContent="Registrar tienda";$("store-save-button").textContent="Guardar tienda";$("store-cancel-edit").hidden=true;notice("store-notice",id?"Tienda actualizada.":"Tienda registrada.");renderAll()}catch(err){notice("store-notice","No se pudo guardar la tienda en este dispositivo.")}});
+$("store-cancel-edit").addEventListener("click",()=>{ $("store-form").reset();$("store-edit-id").value="";$("store-form-title").textContent="Registrar tienda";$("store-save-button").textContent="Guardar tienda";$("store-cancel-edit").hidden=true});
+function renderStores(){const container=$("stores-list");if(!container)return;container.replaceChildren();const list=stores();if(!list.length){const p=document.createElement("p");p.className="muted";p.textContent="Todavía no hay tiendas registradas.";container.append(p)}list.forEach(s=>{const row=document.createElement("article");row.className="store-row";const info=document.createElement("div");const title=document.createElement("b");title.textContent=`${s.number} · ${s.name}`;const address=document.createElement("small");address.textContent=s.address;info.append(title,address);const actions=document.createElement("div");actions.className="row-actions";const edit=document.createElement("button");edit.type="button";edit.className="secondary";edit.textContent="Editar";edit.addEventListener("click",()=>{$("store-edit-id").value=s.id;$("store-number").value=s.number;$("store-name").value=s.name;$("store-address").value=s.address;$("store-form-title").textContent="Editar tienda";$("store-save-button").textContent="Guardar cambios";$("store-cancel-edit").hidden=false;window.scrollTo({top:0,behavior:"smooth"})});const del=document.createElement("button");del.type="button";del.className="danger small-button";del.textContent="Eliminar";del.addEventListener("click",()=>{if(confirm(`¿Eliminar la tienda ${s.number} · ${s.name}? Las notas ya guardadas conservarán sus datos.`)){write(KEYS.stores,stores().filter(x=>x.id!==s.id));renderAll()}});actions.append(edit,del);row.append(info,actions);container.append(row)})}
+function renderPrices(){const container=$("prices-list");if(!container)return;container.replaceChildren();const p=prices();PRODUCTS.forEach(name=>{const row=document.createElement("div");row.className="price-row";const label=document.createElement("label");label.textContent=name;label.htmlFor=`price-${PRODUCTS.indexOf(name)}`;const wrap=document.createElement("div");wrap.className="price-input-wrap";const sign=document.createElement("span");sign.textContent="$";const input=document.createElement("input");input.id=label.htmlFor;input.type="number";input.min="0";input.step="0.01";input.inputMode="decimal";input.required=true;input.value=Number(p[name]).toFixed(2);input.dataset.product=name;input.setAttribute("aria-label",`Precio por pieza de ${name}`);wrap.append(sign,input);row.append(label,wrap);container.append(row)})}
+$("prices-form").addEventListener("submit",event=>{event.preventDefault();const p={};let valid=true;document.querySelectorAll("#prices-list input").forEach(input=>{const n=Number(input.value);if(!Number.isFinite(n)||n<0){valid=false}else p[input.dataset.product]=Math.round(n*100)/100});if(!valid){notice("prices-notice","Revisa los importes. Los precios deben ser números iguales o mayores que cero.");return}try{write(KEYS.prices,p);notice("prices-notice","Precios guardados en este dispositivo. Las notas anteriores conservarán sus importes.");renderProductRows();updateSaleTotals()}catch(err){notice("prices-notice","No se pudieron guardar los precios.")}});
+function renderHistory(){const container=$("sales-history");if(!container)return;container.replaceChildren();const list=sales().slice().reverse();if(!list.length){const p=document.createElement("p");p.className="muted";p.textContent="Todavía no hay notas guardadas.";container.append(p)}list.forEach(note=>{const row=document.createElement("article");row.className="sale";const left=document.createElement("div");const title=document.createElement("b");title.textContent=`Tienda ${note.storeNumber} · ${note.storeName}`;const meta=document.createElement("small");meta.textContent=`${note.dateLabel||note.date} · ${note.totalPieces} piezas · ${note.seller||""}`;left.append(title,meta);const amount=document.createElement("strong");amount.textContent=money(note.total);row.append(left,amount);const detail=document.createElement("p");detail.className="muted history-detail";detail.textContent=(note.lines||[]).map(x=>`${x.product}: ${x.quantity} pza. (${money(x.subtotal)})`).join(" · ");container.append(row,detail)});$("home-sales-count").textContent=sales().length}
+function exportCSV(){const notes=sales();const rows=[["ID nota","Fecha","Vendedor","Número tienda","Nombre tienda","Dirección","Producto","Piezas","Precio unitario MXN","Subtotal MXN","Total piezas nota","Total nota MXN" ]];notes.forEach(n=>{(n.lines||[]).forEach(line=>rows.push([n.id,n.dateLabel||n.date,n.seller,n.storeNumber,n.storeName,n.storeAddress,line.product,line.quantity,line.unitPrice,line.subtotal,n.totalPieces,n.total]))});const csv="\uFEFF"+rows.map(row=>row.map(value=>'"'+String(value??"").replaceAll('"','""')+'"').join(",")).join("\r\n");const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));const link=document.createElement("a");link.href=url;link.download="semilla-dorada-pruebas-notas.csv";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$("export").addEventListener("click",exportCSV);$("export-history").addEventListener("click",exportCSV);$("logout").addEventListener("click",showLogin);
 function updateNetwork(){const online=navigator.onLine;$("network").textContent=online?"Con conexión":"Sin conexión";$("network").setAttribute("aria-label",online?"Con conexión":"Sin conexión")}
 addEventListener("online",updateNetwork);addEventListener("offline",updateNetwork);
-function startFlow(){
-  $("splash").hidden=false;$("login-screen").hidden=true;$("app-shell").hidden=true;
-  window.setTimeout(()=>{if(sessionStorage.getItem("sd-session-user"))showApp(sessionStorage.getItem("sd-session-user"));else showLogin()},2000);
-}
-updateNetwork();
-if("serviceWorker"in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){
-  window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(err=>console.error("No se pudo registrar el modo offline:",err)))
-}
-startFlow();
+$("login-form").addEventListener("submit",async event=>{event.preventDefault();const username=$("username").value.trim();const password=$("password").value;const button=$("login-button");const error=$("login-error");button.disabled=true;button.textContent="Validando…";error.hidden=true;try{if(await validateLogin(username,password))showApp(username);else{error.hidden=false;$("password").value="";$("password").focus()}}catch(err){error.textContent="No se pudo validar el acceso en este navegador. Actualiza Chrome e inténtalo de nuevo.";error.hidden=false;console.error(err)}finally{button.disabled=false;button.textContent="Ingresar"}});
+function startFlow(){$("splash").hidden=false;$("login-screen").hidden=true;$("app-shell").hidden=true;window.setTimeout(()=>{if(sessionStorage.getItem("sd-pruebas-session-user"))showApp(sessionStorage.getItem("sd-pruebas-session-user"));else showLogin()},2000)}
+updateNetwork();if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(err=>console.error("No se pudo registrar el modo offline:",err)))}startFlow();
